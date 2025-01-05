@@ -1,1 +1,1 @@
-# NeuralNetworkScratch
+# NeuralNetworkDemo
