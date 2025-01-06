@@ -3,196 +3,132 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+import streamlit as st
+from torchviz import make_dot
+from PIL import Image
+import io
 
-print("PyTorch version:", torch.__version__)
-print("CUDA available:", torch.cuda.is_available())
+# Streamlit app starts here
+st.title("Neural Network Builder and Trainer")
 
-# https://pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html
+# Sidebar inputs
+st.sidebar.header("Network Configuration")
 
-# Download training data from open datasets.
-training_data = datasets.FashionMNIST(
-    root="data",
-    train=True,
-    download=True,
-    transform=ToTensor(),
+# Input size
+input_size = st.sidebar.number_input(
+    "Input Size", min_value=1, max_value=1024, value=28 * 28, step=1
 )
 
-# Download test data from open datasets.
-test_data = datasets.FashionMNIST(
-    root="data",
-    train=False,
-    download=True,
-    transform=ToTensor(),
+# Hidden layers
+hidden_layers_input = st.sidebar.text_input(
+    "Hidden Layers (comma-separated, e.g., 512,256,128)", value="512,256,128"
+)
+try:
+    hidden_layers = [int(size.strip()) for size in hidden_layers_input.split(",") if int(size.strip()) > 0]
+except ValueError:
+    st.sidebar.error("Invalid hidden layer sizes. Ensure all values are positive integers.")
+    hidden_layers = []
+
+# Output size
+output_size = st.sidebar.number_input(
+    "Output Size", min_value=1, max_value=1024, value=10, step=1
 )
 
+# Activation functions
+activations = []
+for i in range(len(hidden_layers)):
+    activation = st.sidebar.selectbox(
+        f"Activation Function for Layer {i + 1}",
+        ["ReLU", "Sigmoid", "Tanh"],
+        index=0,
+    )
+    activations.append(getattr(nn, activation))
 
-batch_size = 64
+# Model visualization function
+def visualize_model(model):
+    try:
+        sample_input = torch.randn(1, input_size)
+        model_graph = make_dot(model(sample_input), params=dict(model.named_parameters()))
+        model_graph.render("model", format="png", cleanup=True)
+        return Image.open("model.png")
+    except Exception as e:
+        st.error(f"Error visualizing model: {e}")
+        return None
 
-# Create data loaders.
-train_dataloader = DataLoader(training_data, batch_size=batch_size)
-test_dataloader = DataLoader(test_data, batch_size=batch_size)
+# Create the network dynamically
+st.sidebar.header("Model")
+if st.sidebar.button("Build Model"):
+    model = nn.Sequential()
+    prev_size = input_size
 
-for X, y in test_dataloader:
-    print(f"Shape of X [N, C, H, W]: {X.shape}")
-    print(f"Shape of y: {y.shape} {y.dtype}")
-    break
+    # Adding layers dynamically
+    for hidden_size, activation in zip(hidden_layers, activations):
+        model.add_module(f"Linear_{prev_size}_{hidden_size}", nn.Linear(prev_size, hidden_size))
+        model.add_module(f"Activation_{activation.__name__}", activation())
+        prev_size = hidden_size
 
+    model.add_module(f"Linear_{prev_size}_{output_size}", nn.Linear(prev_size, output_size))
+    st.sidebar.success("Model built successfully!")
 
-# Get cpu, gpu or mps device for training.
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
-print(f"Using {device} device")
+    # Visualize the model
+    st.header("Neural Network Diagram")
+    network_image = visualize_model(model)
+    if network_image:
+        st.image(network_image, caption="Network Diagram", use_column_width=True)
 
-class NeuralNetwork(nn.Module):
-    def __init__(self, input_size, hidden_layers, output_size, activations):
-        """
-        Initialize a customizable neural network.
-        
-        Args:
-            input_size (int): Number of input features.
-            hidden_layers (list of int): Number of neurons in each hidden layer.
-            output_size (int): Number of output features.
-            activations (list of nn.Module): Activation functions for each layer.
-        """
-        super().__init__()
-        self.flatten = nn.Flatten()
-        
-        # Define the layers dynamically
-        layers = []
-        prev_size = input_size
-        
-        for i, (hidden_size, activation) in enumerate(zip(hidden_layers, activations)):
-            layers.append(nn.Linear(prev_size, hidden_size))
-            if activation:
-                layers.append(activation())
-            prev_size = hidden_size
-        
-        # Add the final output layer
-        layers.append(nn.Linear(prev_size, output_size))
-        
-        self.linear_stack = nn.Sequential(*layers)
+# Data Loading
+st.sidebar.header("Dataset Configuration")
+batch_size = st.sidebar.number_input("Batch Size", min_value=1, max_value=512, value=64, step=1)
 
-    def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_stack(x)
-        return logits
+if st.sidebar.button("Load Dataset"):
+    try:
+        training_data = datasets.FashionMNIST(
+            root="data", train=True, download=True, transform=ToTensor()
+        )
+        test_data = datasets.FashionMNIST(
+            root="data", train=False, download=True, transform=ToTensor()
+        )
+        train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+        test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
+        st.sidebar.success("Dataset loaded successfully!")
+    except Exception as e:
+        st.sidebar.error(f"Error loading dataset: {e}")
 
-def get_user_input():
-    """
-    Collect neural network parameters from the user interactively.
-    """
-    print("Define your custom neural network:")
+# Training
+if "model" in locals() and "train_dataloader" in locals():
+    st.sidebar.header("Training Configuration")
+    epochs = st.sidebar.slider("Epochs", min_value=1, max_value=100, value=5, step=1)
+    learning_rate = st.sidebar.slider("Learning Rate", min_value=1e-5, max_value=1e-1, value=1e-3, step=1e-5)
 
-    # Input size
-    input_size = int(input("Enter the input size (e.g., 784 for 28x28 images): "))
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
-    # Hidden layers
-    hidden_layers = input("Enter the sizes of hidden layers as a comma-separated list (e.g., 512,256,128): ")
-    hidden_layers = [int(size.strip()) for size in hidden_layers.split(",")]
+    st.header("Training Progress")
+    progress_bar = st.progress(0)
+    train_loss_chart = st.line_chart()
+    accuracy_chart = st.line_chart()
 
-    # Output size
-    output_size = int(input("Enter the output size (e.g., 10 for a 10-class classification problem): "))
-
-    # Activation functions
-    print("Choose activation functions for each layer:")
-    activations = []
-    for i in range(len(hidden_layers)):
-        print(f"Hidden layer {i + 1}:")
-        print("1. ReLU")
-        print("2. Sigmoid")
-        print("3. Tanh")
-        choice = int(input("Select an activation function (1, 2, or 3): "))
-        if choice == 1:
-            activations.append(nn.ReLU)
-        elif choice == 2:
-            activations.append(nn.Sigmoid)
-        elif choice == 3:
-            activations.append(nn.Tanh)
-        else:
-            print("Invalid choice, defaulting to ReLU.")
-            activations.append(nn.ReLU)
-
-    return input_size, hidden_layers, output_size, activations
-
-# Collect user input
-input_size, hidden_layers, output_size, activations = get_user_input()
-
-# Create the neural network
-model = NeuralNetwork(input_size, hidden_layers, output_size, activations)
-
-# Display the model structure
-print("\nYour customized neural network:")
-print(model)
-
-loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
-
-def train(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    model.train()
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
-
-        # Compute prediction error
-        pred = model(X)
-        loss = loss_fn(pred, y)
-
-        # Backpropagation
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-
-def test(dataloader, model, loss_fn):
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    model.eval()
-    test_loss, correct = 0, 0
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0
+        correct = 0
+        total = 0
+        for X, y in train_dataloader:
+            X, y = X.view(X.size(0), -1), y  # Flatten input
+            optimizer.zero_grad()
             pred = model(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-    test_loss /= num_batches
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+            loss = loss_fn(pred, y)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+            correct += (pred.argmax(1) == y).sum().item()
+            total += y.size(0)
 
-epochs = 5
-for t in range(epochs):
-    print(f"Epoch {t+1}\n-------------------------------")
-    train(train_dataloader, model, loss_fn, optimizer)
-    test(test_dataloader, model, loss_fn)
-print("Done!")
+        avg_loss = total_loss / len(train_dataloader)
+        accuracy = correct / total
+        st.write(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}")
+        train_loss_chart.add_rows({"Loss": [avg_loss]})
+        accuracy_chart.add_rows({"Accuracy": [accuracy]})
+        progress_bar.progress((epoch + 1) / epochs)
 
-torch.save(model.state_dict(), "model.pth")
-print("Saved PyTorch Model State to model.pth")
-
-classes = [
-    "T-shirt/top",
-    "Trouser",
-    "Pullover",
-    "Dress",
-    "Coat",
-    "Sandal",
-    "Shirt",
-    "Sneaker",
-    "Bag",
-    "Ankle boot",
-]
-
-model.eval()
-x, y = test_data[0][0], test_data[0][1]
-with torch.no_grad():
-    x = x.to(device)
-    pred = model(x)
-    predicted, actual = classes[pred[0].argmax(0)], classes[y]
-    print(f'Predicted: "{predicted}", Actual: "{actual}"')
+    st.sidebar.success("Training complete!")
