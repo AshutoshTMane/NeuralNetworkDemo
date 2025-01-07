@@ -6,6 +6,9 @@ from torchvision.transforms import ToTensor
 import streamlit as st
 from torchviz import make_dot
 from PIL import Image
+from pyvis.network import Network
+import streamlit.components.v1 as components
+import graphviz
 import io
 
 # Streamlit app starts here
@@ -55,13 +58,66 @@ def visualize_model(model):
         st.error(f"Error visualizing model: {e}")
         return None
 
+def visualize_traditional_model(input_size, hidden_layers, output_size):
+    """
+    Generates a traditional left-to-right visualization of the neural network.
+    """
+    dot = graphviz.Digraph(format="png")
+    dot.attr(rankdir="LR", size="8,5")
+
+    # Input layer
+    dot.node("Input", f"Input\n({input_size})", shape="circle", style="filled", color="lightblue")
+
+    # Hidden layers
+    prev_layer = "Input"
+    for i, hidden_size in enumerate(hidden_layers):
+        layer_name = f"Hidden_{i + 1}"
+        dot.node(layer_name, f"Hidden {i + 1}\n({hidden_size})", shape="circle", style="filled", color="lightgreen")
+        dot.edge(prev_layer, layer_name)
+        prev_layer = layer_name
+
+    # Output layer
+    dot.node("Output", f"Output\n({output_size})", shape="circle", style="filled", color="lightcoral")
+    dot.edge(prev_layer, "Output")
+
+    # Save and render
+    dot.render("network_traditional", cleanup=True)
+    return Image.open("network_traditional.png")
+
+def visualize_interactive_model(input_size, hidden_layers, output_size):
+    """
+    Generates an interactive graph of the neural network using Pyvis.
+    """
+    net = Network(height="600px", width="100%", directed=True)
+    net.force_atlas_2based()
+
+    # Add input layer
+    net.add_node("Input", label=f"Input\n({input_size})", color="lightblue", shape="ellipse")
+
+    # Add hidden layers
+    prev_layer = "Input"
+    for i, hidden_size in enumerate(hidden_layers):
+        layer_name = f"Hidden_{i + 1}"
+        net.add_node(layer_name, label=f"Hidden {i + 1}\n({hidden_size})", color="lightgreen", shape="ellipse")
+        net.add_edge(prev_layer, layer_name)
+        prev_layer = layer_name
+
+    # Add output layer
+    net.add_node("Output", label=f"Output\n({output_size})", color="lightcoral", shape="ellipse")
+    net.add_edge(prev_layer, "Output")
+
+    # Save to HTML
+    net.save_graph("network_interactive.html")
+    return "network_interactive.html"
+
+
 # Create the network dynamically
 st.sidebar.header("Model")
 if st.sidebar.button("Build Model"):
     model = nn.Sequential()
     prev_size = input_size
 
-    # Adding layers dynamically
+    # Add layers dynamically
     for hidden_size, activation in zip(hidden_layers, activations):
         model.add_module(f"Linear_{prev_size}_{hidden_size}", nn.Linear(prev_size, hidden_size))
         model.add_module(f"Activation_{activation.__name__}", activation())
@@ -71,10 +127,14 @@ if st.sidebar.button("Build Model"):
     st.sidebar.success("Model built successfully!")
 
     # Visualize the model
-    st.header("Neural Network Diagram")
-    network_image = visualize_model(model)
-    if network_image:
-        st.image(network_image, caption="Network Diagram", use_column_width=True)
+    st.header("Neural Network Diagram (Interactive)")
+    try:
+        html_file = visualize_interactive_model(input_size, hidden_layers, output_size)
+        with open(html_file, "r") as f:
+            html_content = f.read()
+        components.html(html_content, height=600, width=800)
+    except Exception as e:
+        st.error(f"Error visualizing model: {e}")
 
 # Data Loading
 st.sidebar.header("Dataset Configuration")
