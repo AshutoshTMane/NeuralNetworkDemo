@@ -111,7 +111,7 @@ def visualize_interactive_model(input_size, hidden_layers, output_size):
     return "network_interactive.html"
 
 
-# Create the network dynamically
+# Create the network dynamically 
 st.sidebar.header("Model")
 if st.sidebar.button("Build Model"):
     model = nn.Sequential()
