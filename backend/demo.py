@@ -27,3 +27,28 @@ def initialize_parameters(input_size, hidden_size, output_size):
 # We'll use the sigmoid function for simplicity.
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
+
+# Derivative of sigmoid for backpropagation
+# This helps the network learn during training by updating weights and biases.
+def sigmoid_derivative(z):
+    return sigmoid(z) * (1 - sigmoid(z))
+
+# Step 3: Forward propagation
+# This calculates the output of the network based on inputs and current weights/biases.
+def forward_propagation(X, W1, b1, W2, b2):
+    # Linear step for the hidden layer
+    Z1 = np.dot(W1, X) + b1
+    A1 = sigmoid(Z1)  # Activation for the hidden layer
+
+    # Linear step for the output layer
+    Z2 = np.dot(W2, A1) + b2
+    A2 = sigmoid(Z2)  # Activation for the output layer
+
+    return Z1, A1, Z2, A2
+
+# Step 4: Compute the cost
+# The cost function measures how well the network's predictions match the actual outputs.
+def compute_cost(A2, Y):
+    m = Y.shape[1]  # Number of examples
+    cost = -np.sum(Y * np.log(A2) + (1 - Y) * np.log(1 - A2)) / m
+    return cost
