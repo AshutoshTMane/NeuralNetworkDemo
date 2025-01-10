@@ -86,24 +86,50 @@ def visualize_traditional_model(input_size, hidden_layers, output_size):
 
 def visualize_interactive_model(input_size, hidden_layers, output_size):
     """
-    Generates an interactive graph of the neural network using Pyvis.
+    Generates an interactive, styled graph of the neural network using Pyvis.
     """
     net = Network(height="600px", width="100%", directed=True)
-    net.force_atlas_2based()
+    net.set_options("""var options = {
+        "physics": {
+            "enabled": false
+        },
+        "layout": {
+            "hierarchical": {
+                "enabled": true,
+                "direction": "LR",
+                "sortMethod": "directed"
+            }
+        }
+    }""")
 
     # Add input layer
-    net.add_node("Input", label=f"Input\n({input_size})", color="lightblue", shape="ellipse")
+    net.add_node(
+        "Input",
+        label=f"Input\n({input_size})",
+        color="lightblue",
+        shape="ellipse"
+    )
 
     # Add hidden layers
     prev_layer = "Input"
     for i, hidden_size in enumerate(hidden_layers):
         layer_name = f"Hidden_{i + 1}"
-        net.add_node(layer_name, label=f"Hidden {i + 1}\n({hidden_size})", color="lightgreen", shape="ellipse")
+        net.add_node(
+            layer_name,
+            label=f"Hidden {i + 1}\n({hidden_size})",
+            color="lightgreen",
+            shape="ellipse"
+        )
         net.add_edge(prev_layer, layer_name)
         prev_layer = layer_name
 
     # Add output layer
-    net.add_node("Output", label=f"Output\n({output_size})", color="lightcoral", shape="ellipse")
+    net.add_node(
+        "Output",
+        label=f"Output\n({output_size})",
+        color="lightcoral",
+        shape="ellipse"
+    )
     net.add_edge(prev_layer, "Output")
 
     # Save to HTML

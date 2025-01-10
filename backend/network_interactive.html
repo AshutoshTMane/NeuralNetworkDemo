@@ -100,44 +100,7 @@
                   // adding nodes and edges to the graph
                   data = {nodes: nodes, edges: edges};
 
-                  var options = {
-    "configure": {
-        "enabled": false
-    },
-    "edges": {
-        "color": {
-            "inherit": true
-        },
-        "smooth": {
-            "enabled": true,
-            "type": "dynamic"
-        }
-    },
-    "interaction": {
-        "dragNodes": true,
-        "hideEdgesOnDrag": false,
-        "hideNodesOnDrag": false
-    },
-    "physics": {
-        "enabled": true,
-        "forceAtlas2Based": {
-            "avoidOverlap": 0,
-            "centralGravity": 0.01,
-            "damping": 0.4,
-            "gravitationalConstant": -50,
-            "springConstant": 0.08,
-            "springLength": 100
-        },
-        "solver": "forceAtlas2Based",
-        "stabilization": {
-            "enabled": true,
-            "fit": true,
-            "iterations": 1000,
-            "onlyDynamicEdges": false,
-            "updateInterval": 50
-        }
-    }
-};
+                  var options = {"physics": {"enabled": false}, "layout": {"hierarchical": {"enabled": true, "direction": "LR", "sortMethod": "directed"}}};
 
                   
 
