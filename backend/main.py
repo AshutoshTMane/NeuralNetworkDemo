@@ -1,220 +1,136 @@
-import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
 import streamlit as st
-from torchviz import make_dot
-from PIL import Image
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
 from pyvis.network import Network
+import os
 import streamlit.components.v1 as components
-import graphviz
-import io
 
-# Streamlit app starts here
-st.title("Neural Network Builder and Trainer")
+# Function to dynamically create a neural network model
+def create_model(input_size, hidden_layers, output_size, activations):
+    layers = []
+    in_features = input_size
 
-# Sidebar inputs
-st.sidebar.header("Network Configuration")
+    for i, out_features in enumerate(hidden_layers):
+        layers.append(nn.Linear(in_features, out_features))
+        activation = getattr(nn, activations[i], None)
+        if activation is not None:
+            layers.append(activation())
+        in_features = out_features
 
-# Input size
-input_size = st.sidebar.number_input(
-    "Input Size", min_value=1, max_value=1024, value=28 * 28, step=1
-)
+    layers.append(nn.Linear(in_features, output_size))
+    return nn.Sequential(*layers)
 
-# Hidden layers
+# Function to visualize the model using Pyvis
+def visualize_interactive_model(input_size, hidden_layers, output_size):
+    net = Network(height="500px", width="800px", directed=True)
+
+    net.add_node("Input", label="Input ({} nodes)".format(input_size), color="#f4a261", shape="circle")
+    previous_layer = "Input"
+
+    for i, layer_size in enumerate(hidden_layers):
+        layer_name = f"Hidden Layer {i+1}"
+        net.add_node(layer_name, label=f"Hidden Layer {i+1} ({layer_size} nodes)", color="#2a9d8f", shape="circle")
+        net.add_edge(previous_layer, layer_name)
+        previous_layer = layer_name
+
+    net.add_node("Output", label="Output ({} nodes)".format(output_size), color="#e76f51", shape="circle")
+    net.add_edge(previous_layer, "Output")
+
+    net.set_options("""
+    var options = {
+      "physics": {
+        "enabled": true
+      },
+      "layout": {
+        "hierarchical": {
+          "enabled": true,
+          "direction": "LR",
+          "sortMethod": "directed"
+        }
+      },
+      "interaction": {
+        "navigationButtons": true,
+        "keyboard": true
+      }
+    }
+    """)
+
+    html_file = "interactive_model.html"
+    net.save_graph(html_file)
+    return html_file
+
+# Sidebar for user input
+st.sidebar.header("Neural Network Configuration")
+input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=784, step=1)
+output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=10, step=1)
+
 hidden_layers_input = st.sidebar.text_input(
     "Hidden Layers (comma-separated, e.g., 512,256,128)", value="512,256,128"
 )
 try:
-    hidden_layers = [int(size.strip()) for size in hidden_layers_input.split(",") if int(size.strip()) > 0]
+    hidden_layers = [
+        int(size.strip()) for size in hidden_layers_input.split(",") if int(size.strip()) > 0
+    ]
+    if not hidden_layers:
+        raise ValueError("At least one hidden layer must be specified.")
 except ValueError:
-    st.sidebar.error("Invalid hidden layer sizes. Ensure all values are positive integers.")
+    st.sidebar.error("Invalid input! Enter positive integers separated by commas.")
     hidden_layers = []
 
-# Output size
-output_size = st.sidebar.number_input(
-    "Output Size", min_value=1, max_value=1024, value=10, step=1
-)
-
-# Activation functions
 activations = []
 for i in range(len(hidden_layers)):
-    activation = st.sidebar.selectbox(
-        f"Activation Function for Layer {i + 1}",
-        ["ReLU", "Sigmoid", "Tanh"],
-        index=0,
-    )
-    activations.append(getattr(nn, activation))
-
-# Model visualization function
-def visualize_model(model):
-    try:
-        sample_input = torch.randn(1, input_size)
-        model_graph = make_dot(model(sample_input), params=dict(model.named_parameters()))
-        model_graph.render("model", format="png", cleanup=True)
-        return Image.open("model.png")
-    except Exception as e:
-        st.error(f"Error visualizing model: {e}")
-        return None
-
-def visualize_traditional_model(input_size, hidden_layers, output_size):
-    """
-    Generates a traditional left-to-right visualization of the neural network.
-    """
-    dot = graphviz.Digraph(format="png")
-    dot.attr(rankdir="LR", size="8,5")
-
-    # Input layer
-    dot.node("Input", f"Input\n({input_size})", shape="circle", style="filled", color="lightblue")
-
-    # Hidden layers
-    prev_layer = "Input"
-    for i, hidden_size in enumerate(hidden_layers):
-        layer_name = f"Hidden_{i + 1}"
-        dot.node(layer_name, f"Hidden {i + 1}\n({hidden_size})", shape="circle", style="filled", color="lightgreen")
-        dot.edge(prev_layer, layer_name)
-        prev_layer = layer_name
-
-    # Output layer
-    dot.node("Output", f"Output\n({output_size})", shape="circle", style="filled", color="lightcoral")
-    dot.edge(prev_layer, "Output")
-
-    # Save and render
-    dot.render("network_traditional", cleanup=True)
-    return Image.open("network_traditional.png")
-
-def visualize_interactive_model(input_size, hidden_layers, output_size):
-    """
-    Generates an interactive, styled graph of the neural network using Pyvis.
-    """
-    net = Network(height="600px", width="100%", directed=True)
-    net.set_options("""var options = {
-        "physics": {
-            "enabled": false
-        },
-        "layout": {
-            "hierarchical": {
-                "enabled": true,
-                "direction": "LR",
-                "sortMethod": "directed"
-            }
-        }
-    }""")
-
-    # Add input layer
-    net.add_node(
-        "Input",
-        label=f"Input\n({input_size})",
-        color="lightblue",
-        shape="ellipse"
-    )
-
-    # Add hidden layers
-    prev_layer = "Input"
-    for i, hidden_size in enumerate(hidden_layers):
-        layer_name = f"Hidden_{i + 1}"
-        net.add_node(
-            layer_name,
-            label=f"Hidden {i + 1}\n({hidden_size})",
-            color="lightgreen",
-            shape="ellipse"
+    activations.append(
+        st.sidebar.selectbox(
+            f"Activation for Hidden Layer {i+1}", ["ReLU", "Sigmoid", "Tanh"], index=0
         )
-        net.add_edge(prev_layer, layer_name)
-        prev_layer = layer_name
-
-    # Add output layer
-    net.add_node(
-        "Output",
-        label=f"Output\n({output_size})",
-        color="lightcoral",
-        shape="ellipse"
     )
-    net.add_edge(prev_layer, "Output")
 
-    # Save to HTML
-    net.save_graph("network_interactive.html")
-    return "network_interactive.html"
-
-
-# Create the network dynamically 
-st.sidebar.header("Model")
+# Visualize model button
 if st.sidebar.button("Build Model"):
-    model = nn.Sequential()
-    prev_size = input_size
-
-    # Add layers dynamically
-    for hidden_size, activation in zip(hidden_layers, activations):
-        model.add_module(f"Linear_{prev_size}_{hidden_size}", nn.Linear(prev_size, hidden_size))
-        model.add_module(f"Activation_{activation.__name__}", activation())
-        prev_size = hidden_size
-
-    model.add_module(f"Linear_{prev_size}_{output_size}", nn.Linear(prev_size, output_size))
-    st.sidebar.success("Model built successfully!")
-
-    # Visualize the model
-    st.header("Neural Network Diagram (Interactive)")
-    try:
+    if hidden_layers:
         html_file = visualize_interactive_model(input_size, hidden_layers, output_size)
         with open(html_file, "r") as f:
             html_content = f.read()
         components.html(html_content, height=600, width=800)
-    except Exception as e:
-        st.error(f"Error visualizing model: {e}")
+    else:
+        st.error("Please configure the hidden layers correctly.")
 
-# Data Loading
-st.sidebar.header("Dataset Configuration")
-batch_size = st.sidebar.number_input("Batch Size", min_value=1, max_value=512, value=64, step=1)
+# Option to train the model
+def train_model():
+    st.header("Train the Model")
 
-if st.sidebar.button("Load Dataset"):
-    try:
-        training_data = datasets.FashionMNIST(
-            root="data", train=True, download=True, transform=ToTensor()
-        )
-        test_data = datasets.FashionMNIST(
-            root="data", train=False, download=True, transform=ToTensor()
-        )
-        train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
-        test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
-        st.sidebar.success("Dataset loaded successfully!")
-    except Exception as e:
-        st.sidebar.error(f"Error loading dataset: {e}")
+    # Load dataset
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+    train_dataset = datasets.FashionMNIST(
+        root="data", train=True, download=True, transform=transform
+    )
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
 
-# Training
-if "model" in locals() and "train_dataloader" in locals():
-    st.sidebar.header("Training Configuration")
-    epochs = st.sidebar.slider("Epochs", min_value=1, max_value=100, value=5, step=1)
-    learning_rate = st.sidebar.slider("Learning Rate", min_value=1e-5, max_value=1e-1, value=1e-3, step=1e-5)
+    # Model
+    model = create_model(input_size, hidden_layers, output_size, activations)
+    st.text(model)
 
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    # Loss and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    st.header("Training Progress")
-    progress_bar = st.progress(0)
-    train_loss_chart = st.line_chart()
-    accuracy_chart = st.line_chart()
-
+    # Training loop
+    epochs = st.sidebar.slider("Epochs", min_value=1, max_value=20, value=5)
     for epoch in range(epochs):
-        model.train()
-        total_loss = 0
-        correct = 0
-        total = 0
-        for X, y in train_dataloader:
-            X, y = X.view(X.size(0), -1), y  # Flatten input
+        running_loss = 0.0
+        for images, labels in train_loader:
+            images = images.view(images.shape[0], -1)
+
             optimizer.zero_grad()
-            pred = model(X)
-            loss = loss_fn(pred, y)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            total_loss += loss.item()
-            correct += (pred.argmax(1) == y).sum().item()
-            total += y.size(0)
 
-        avg_loss = total_loss / len(train_dataloader)
-        accuracy = correct / total
-        st.write(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}")
-        train_loss_chart.add_rows({"Loss": [avg_loss]})
-        accuracy_chart.add_rows({"Accuracy": [accuracy]})
-        progress_bar.progress((epoch + 1) / epochs)
+            running_loss += loss.item()
+        st.write(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader):.4f}")
 
-    st.sidebar.success("Training complete!")
+if st.sidebar.button("Train Model"):
+    train_model()
