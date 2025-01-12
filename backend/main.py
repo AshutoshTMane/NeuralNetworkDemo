@@ -77,17 +77,24 @@ output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=10
 
 # Button to add a new hidden layer
 if st.sidebar.button("Add Hidden Layer"):
-    st.session_state.hidden_layers.append(
-        st.sidebar.number_input(f"Hidden Layer {len(st.session_state.hidden_layers) + 1} Size", min_value=1, value=256, step=1)
-    )
-    st.session_state.activations.append(
-        st.sidebar.selectbox(f"Activation for Hidden Layer {len(st.session_state.hidden_layers)}", ["ReLU", "Sigmoid", "Tanh"], index=0)
-    )
+    st.session_state.hidden_layers.append(256)  # Default size
+    st.session_state.activations.append("ReLU")  # Default activation function
 
-# Display and allow deletion of existing hidden layers
-for i, layer_size in enumerate(st.session_state.hidden_layers):
-    with st.sidebar.expander(f"Hidden Layer {i+1} ({layer_size} nodes)"):
-        if st.button(f"Delete Layer {i+1}"):
+# Display, edit, or delete existing hidden layers
+for i, (layer_size, activation) in enumerate(zip(st.session_state.hidden_layers, st.session_state.activations)):
+    with st.sidebar.expander(f"Hidden Layer {i+1} ({layer_size} nodes, {activation})"):
+        new_size = st.number_input(f"Edit Size for Hidden Layer {i+1}", min_value=1, value=layer_size, step=1, key=f"size_{i}")
+        new_activation = st.selectbox(
+            f"Activation for Hidden Layer {i+1}",
+            ["ReLU", "Sigmoid", "Tanh"],
+            index=["ReLU", "Sigmoid", "Tanh"].index(activation),
+            key=f"activation_{i}"
+        )
+        if st.button(f"Save Changes to Layer {i+1}", key=f"save_{i}"):
+            st.session_state.hidden_layers[i] = new_size
+            st.session_state.activations[i] = new_activation
+
+        if st.button(f"Delete Layer {i+1}", key=f"delete_{i}"):
             st.session_state.hidden_layers.pop(i)
             st.session_state.activations.pop(i)
             break  # Prevent index issues after deletion
