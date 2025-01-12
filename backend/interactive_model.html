@@ -88,8 +88,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"color": "#f4a261", "id": "Input", "label": "Input (784 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 1", "label": "Hidden Layer 1 (512 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 2", "label": "Hidden Layer 2 (256 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 3", "label": "Hidden Layer 3 (128 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 4", "label": "Hidden Layer 4 (100 nodes)", "shape": "circle"}, {"color": "#e76f51", "id": "Output", "label": "Output (10 nodes)", "shape": "circle"}]);
-                  edges = new vis.DataSet([{"arrows": "to", "from": "Input", "to": "Hidden Layer 1"}, {"arrows": "to", "from": "Hidden Layer 1", "to": "Hidden Layer 2"}, {"arrows": "to", "from": "Hidden Layer 2", "to": "Hidden Layer 3"}, {"arrows": "to", "from": "Hidden Layer 3", "to": "Hidden Layer 4"}, {"arrows": "to", "from": "Hidden Layer 4", "to": "Output"}]);
+                  nodes = new vis.DataSet([{"color": "#f4a261", "id": "Input", "label": "Input (784 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 1", "label": "Hidden Layer 1 (256 nodes)", "shape": "circle"}, {"color": "#2a9d8f", "id": "Hidden Layer 2", "label": "Hidden Layer 2 (256 nodes)", "shape": "circle"}, {"color": "#e76f51", "id": "Output", "label": "Output (10 nodes)", "shape": "circle"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "Input", "to": "Hidden Layer 1"}, {"arrows": "to", "from": "Hidden Layer 1", "to": "Hidden Layer 2"}, {"arrows": "to", "from": "Hidden Layer 2", "to": "Output"}]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });

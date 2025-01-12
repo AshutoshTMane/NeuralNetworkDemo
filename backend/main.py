@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 from pyvis.network import Network
-import os
 import streamlit.components.v1 as components
+
 
 # Function to dynamically create a neural network model
 def create_model(input_size, hidden_layers, output_size, activations):
@@ -21,6 +21,7 @@ def create_model(input_size, hidden_layers, output_size, activations):
 
     layers.append(nn.Linear(in_features, output_size))
     return nn.Sequential(*layers)
+
 
 # Function to visualize the model using Pyvis
 def visualize_interactive_model(input_size, hidden_layers, output_size):
@@ -40,20 +41,20 @@ def visualize_interactive_model(input_size, hidden_layers, output_size):
 
     net.set_options("""
     var options = {
-      "physics": {
-        "enabled": true
-      },
-      "layout": {
-        "hierarchical": {
-          "enabled": true,
-          "direction": "LR",
-          "sortMethod": "directed"
+        "physics": {
+            "enabled": true
+        },
+        "layout": {
+            "hierarchical": {
+                "enabled": true,
+                "direction": "LR",
+                "sortMethod": "directed"
+            }
+        },
+        "interaction": {
+            "navigationButtons": true,
+            "keyboard": true
         }
-      },
-      "interaction": {
-        "navigationButtons": true,
-        "keyboard": true
-      }
     }
     """)
 
@@ -61,41 +62,45 @@ def visualize_interactive_model(input_size, hidden_layers, output_size):
     net.save_graph(html_file)
     return html_file
 
+
 # Sidebar for user input
 st.sidebar.header("Neural Network Configuration")
+
+# Persist state with Streamlit's session state
+if "hidden_layers" not in st.session_state:
+    st.session_state.hidden_layers = []
+if "activations" not in st.session_state:
+    st.session_state.activations = []
+
 input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=784, step=1)
 output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=10, step=1)
 
-hidden_layers_input = st.sidebar.text_input(
-    "Hidden Layers (comma-separated, e.g., 512,256,128)", value="512,256,128"
-)
-try:
-    hidden_layers = [
-        int(size.strip()) for size in hidden_layers_input.split(",") if int(size.strip()) > 0
-    ]
-    if not hidden_layers:
-        raise ValueError("At least one hidden layer must be specified.")
-except ValueError:
-    st.sidebar.error("Invalid input! Enter positive integers separated by commas.")
-    hidden_layers = []
-
-activations = []
-for i in range(len(hidden_layers)):
-    activations.append(
-        st.sidebar.selectbox(
-            f"Activation for Hidden Layer {i+1}", ["ReLU", "Sigmoid", "Tanh"], index=0
-        )
+# Button to add a new hidden layer
+if st.sidebar.button("Add Hidden Layer"):
+    st.session_state.hidden_layers.append(
+        st.sidebar.number_input(f"Hidden Layer {len(st.session_state.hidden_layers) + 1} Size", min_value=1, value=256, step=1)
     )
+    st.session_state.activations.append(
+        st.sidebar.selectbox(f"Activation for Hidden Layer {len(st.session_state.hidden_layers)}", ["ReLU", "Sigmoid", "Tanh"], index=0)
+    )
+
+# Display and allow deletion of existing hidden layers
+for i, layer_size in enumerate(st.session_state.hidden_layers):
+    with st.sidebar.expander(f"Hidden Layer {i+1} ({layer_size} nodes)"):
+        if st.button(f"Delete Layer {i+1}"):
+            st.session_state.hidden_layers.pop(i)
+            st.session_state.activations.pop(i)
+            break  # Prevent index issues after deletion
 
 # Visualize model button
 if st.sidebar.button("Build Model"):
-    if hidden_layers:
-        html_file = visualize_interactive_model(input_size, hidden_layers, output_size)
+    if st.session_state.hidden_layers:
+        html_file = visualize_interactive_model(input_size, st.session_state.hidden_layers, output_size)
         with open(html_file, "r") as f:
             html_content = f.read()
         components.html(html_content, height=600, width=800)
     else:
-        st.error("Please configure the hidden layers correctly.")
+        st.error("Please add at least one hidden layer.")
 
 # Option to train the model
 def train_model():
@@ -109,7 +114,7 @@ def train_model():
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
 
     # Model
-    model = create_model(input_size, hidden_layers, output_size, activations)
+    model = create_model(input_size, st.session_state.hidden_layers, output_size, st.session_state.activations)
     st.text(model)
 
     # Loss and optimizer
@@ -131,6 +136,7 @@ def train_model():
 
             running_loss += loss.item()
         st.write(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader):.4f}")
+
 
 if st.sidebar.button("Train Model"):
     train_model()
