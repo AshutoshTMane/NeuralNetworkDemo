@@ -6,6 +6,11 @@ from torchvision import datasets, transforms
 from pyvis.network import Network
 import streamlit.components.v1 as components
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
 
 # Function to dynamically create a neural network model
 def create_model(input_size, hidden_layers, output_size, activations):
@@ -109,6 +114,41 @@ if st.sidebar.button("Build Model"):
     else:
         st.error("Please add at least one hidden layer.")
 
+def evaluate_model(model, test_loader):
+    st.header("Model Evaluation")
+
+    # Collect predictions and true labels
+    all_preds = []
+    all_labels = []
+
+    model.eval()  # Set model to evaluation mode
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images = images.view(images.shape[0], -1)  # Flatten images
+            outputs = model(images)
+            preds = torch.argmax(outputs, dim=1)  # Get predicted classes
+            all_preds.extend(preds.numpy())
+            all_labels.extend(labels.numpy())
+
+    # Calculate metrics
+    accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average="weighted")
+    recall = recall_score(all_labels, all_preds, average="weighted")
+
+    st.write(f"**Accuracy:** {accuracy:.4f}")
+    st.write(f"**Precision:** {precision:.4f}")
+    st.write(f"**Recall:** {recall:.4f}")
+
+    # Generate confusion matrix
+    cm = confusion_matrix(all_labels, all_preds)
+    st.subheader("Confusion Matrix")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=test_loader.dataset.classes,
+                yticklabels=test_loader.dataset.classes, ax=ax)
+    ax.set_xlabel("Predicted Labels")
+    ax.set_ylabel("True Labels")
+    st.pyplot(fig)
+
 # Option to train the model
 def train_model():
     st.header("Train the Model")
@@ -119,6 +159,11 @@ def train_model():
         root="data", train=True, download=True, transform=transform
     )
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+    test_dataset = datasets.FashionMNIST(
+        root="data", train=False, download=True, transform=transform
+    )
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=64, shuffle=False)
 
     # Model
     model = create_model(input_size, st.session_state.hidden_layers, output_size, st.session_state.activations)
@@ -143,6 +188,13 @@ def train_model():
 
             running_loss += loss.item()
         st.write(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader):.4f}")
+
+    # Save model in session state
+    st.session_state.trained_model = model
+
+    # Add evaluation button
+    if st.sidebar.button("Evaluate Model"):
+        evaluate_model(model, test_loader)
 
 
 if st.sidebar.button("Train Model"):
