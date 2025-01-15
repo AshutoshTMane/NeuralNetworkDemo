@@ -15,8 +15,8 @@ def sidebar():
     if "activations" not in st.session_state:
         st.session_state.activations = []
 
-    input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=784, step=1)
-    output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=10, step=1)
+    input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=None, step=1)
+    output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=None, step=1)
 
     # Button to add a new hidden layer
     if st.sidebar.button("Add Hidden Layer"):

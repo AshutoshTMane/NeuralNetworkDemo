@@ -2,6 +2,18 @@ import torch.nn as nn
 
 # Function to dynamically create a neural network model
 def create_model(input_size, hidden_layers, output_size, activations):
+    """
+    Creates a fully connected neural network where each layer uses the same activation function.
+
+    Args:
+        input_size (int): Number of input features.
+        hidden_layers (list[int]): List of sizes for hidden layers.
+        output_size (int): Number of output features.
+        activation (str): Activation function to use for all hidden layers.
+
+    Returns:
+        nn.Sequential: The constructed neural network model.
+    """
     layers = []
     in_features = input_size
 
