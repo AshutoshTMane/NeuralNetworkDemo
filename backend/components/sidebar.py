@@ -15,8 +15,8 @@ def sidebar():
     if "activations" not in st.session_state:
         st.session_state.activations = []
 
-    input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=None, step=1)
-    output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=None, step=1)
+    input_size = st.sidebar.number_input("Input Layer Size", min_value=1, value=784, step=1)
+    output_size = st.sidebar.number_input("Output Layer Size", min_value=1, value=10, step=1)
 
     # Button to add a new hidden layer
     if st.sidebar.button("Add Hidden Layer"):
@@ -51,7 +51,9 @@ def sidebar():
             components.html(html_content, height=600, width=800)
         else:
             st.error("Please add at least one hidden layer.")
-        
+            
+
+    epochs = st.sidebar.slider("Epochs", min_value=1, max_value=20, value=1)
     
     if st.sidebar.button("Train Model"):
-        train_model(input_size, output_size)
+        train_model(input_size, output_size, epochs)
