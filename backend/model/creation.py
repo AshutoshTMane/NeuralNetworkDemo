@@ -1,4 +1,4 @@
-
+import torch.nn as nn
 
 # Function to dynamically create a neural network model
 def create_model(input_size, hidden_layers, output_size, activations):
