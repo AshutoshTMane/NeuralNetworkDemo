@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torchvision.models as models
 
@@ -16,6 +15,7 @@ def create_model(input_size=None, hidden_layers=None, output_size=None, activati
     Returns:
         nn.Module: The constructed or pretrained neural network model.
     """
+
     if pretrained_model_name:
         # Dictionary of available pretrained models
         pretrained_models = {

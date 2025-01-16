@@ -34,7 +34,10 @@ def render_creator_section():
             )
 
     if st.button("Build Model"):
-        html_file = visualize_interactive_model(input_size, st.session_state.hidden_layers, output_size)
-        with open(html_file, "r") as f:
-            html_content = f.read()
-        st.components.v1.html(html_content, height=600, width=800)
+        if not st.session_state.get("dataset_selected", False):
+            st.error("No dataset selected. Please select a dataset before creating a model.")
+        else:
+            html_file = visualize_interactive_model(input_size, st.session_state.hidden_layers, output_size)
+            with open(html_file, "r") as f:
+                html_content = f.read()
+            st.components.v1.html(html_content, height=600, width=800)

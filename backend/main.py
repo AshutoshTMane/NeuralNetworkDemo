@@ -1,6 +1,8 @@
 import streamlit as st
 
 from components.neural_network_creator import render_creator_section
+from components.premade_datasets import render_dataset_selection_section
+from components.pretrained_model import render_pretrained_model_section
 from components.trainer_section import render_training_section
 from components.evaluation_section import render_evaluation_section
 
@@ -73,15 +75,15 @@ def main():
 
     # Button to toggle the visibility of each section in columns
     with col1:
-        if st.button("Toggle Creator"):
+        if st.button("Creator"):
             st.session_state["show_creator"] = not st.session_state["show_creator"]
 
     with col2:
-        if st.button("Toggle Training"):
+        if st.button("Training"):
             st.session_state["show_training"] = not st.session_state["show_training"]
 
     with col3:
-        if st.button("Toggle Evaluation"):
+        if st.button("Evaluation"):
             st.session_state["show_evaluation"] = not st.session_state["show_evaluation"]
 
     # Dynamic content rendering based on visibility status
@@ -99,9 +101,10 @@ def main():
         # Adjust the layout dynamically based on the number of active sections
         if num_active_sections == 1:
             # Only one section active, so take up the full width
-            st.write("### Active Section")
             if st.session_state["show_creator"]:
+                render_dataset_selection_section()
                 render_creator_section()
+                render_pretrained_model_section()
             elif st.session_state["show_training"]:
                 render_training_section()
             elif st.session_state["show_evaluation"]:
@@ -112,7 +115,9 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 if st.session_state["show_creator"]:
+                    render_dataset_selection_section()
                     render_creator_section()
+                    render_pretrained_model_section()
                 elif st.session_state["show_training"]:
                     render_training_section()
                 elif st.session_state["show_evaluation"]:
@@ -128,7 +133,9 @@ def main():
             col1, col2, col3 = st.columns(3)
             with col1:
                 if st.session_state["show_creator"]:
+                    render_dataset_selection_section()
                     render_creator_section()
+                    render_pretrained_model_section()
             with col2:
                 if st.session_state["show_training"]:
                     render_training_section()
