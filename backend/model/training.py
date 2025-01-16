@@ -84,6 +84,4 @@ def train_model(input_size, output_size, epochs):
     # Save model in session state
     st.session_state.trained_model = model
 
-    # Add evaluation button
-    if st.sidebar.button("Evaluate Model"):
-        evaluate_model(model, test_loader)
+    return model, test_loader

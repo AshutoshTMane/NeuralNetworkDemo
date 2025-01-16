@@ -1,13 +1,13 @@
 import streamlit as st
 import torch
-
+import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
 def evaluate_model(model, test_loader):
-    st.header("Model Evaluation")
+    st.subheader("Model Evaluation")
 
     # Collect predictions and true labels
     all_preds = []
@@ -40,3 +40,20 @@ def evaluate_model(model, test_loader):
     ax.set_xlabel("Predicted Labels")
     ax.set_ylabel("True Labels")
     st.pyplot(fig)
+
+
+def predict_single_sample(model, image, transform):
+    st.subheader("Single Sample Prediction")
+
+    # Preprocess and predict
+    if transform:
+        image = transform(image).unsqueeze(0)  # Apply transform and add batch dimension
+    else:
+        image = torch.tensor(np.array(image)).float().unsqueeze(0)
+
+    model.eval()
+    with torch.no_grad():
+        output = model(image)
+        pred = torch.argmax(output, dim=1).item()
+
+    return pred
