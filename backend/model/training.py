@@ -83,5 +83,5 @@ def train_model(input_size, output_size, epochs):
 
     # Save model in session state
     st.session_state.trained_model = model
-
+    
     return model, test_loader

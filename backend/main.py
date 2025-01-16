@@ -1,6 +1,5 @@
 import streamlit as st
 
-# Importing components
 from components.neural_network_creator import render_creator_section
 from components.trainer_section import render_training_section
 from components.evaluation_section import render_evaluation_section
@@ -19,28 +18,25 @@ st.markdown("""
         border-radius: 10px;
     }
     
-    /* Style for section containers to make them look like cards */
-    .st-expanderHeader {
+    .stButton>button {
         background-color: #2a9d8f;
         color: white;
         font-weight: bold;
         border-radius: 8px;
         padding: 12px;
+        width: 100%;
         text-align: center;
         cursor: pointer;
-        transition: background-color 0.3s ease;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
     }
-    
-    .st-expanderHeader:hover {
+
+    .stButton>button:hover {
         background-color: #21867a;
     }
 
-    /* Style for content inside the expander */
-    .st-expanderContent {
-        padding: 15px;
-        border-radius: 8px;
-        background-color: #f0f0f0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    .stButton>button:focus {
+        outline: none;
+        box-shadow: 0 0 15px 5px rgba(42, 157, 143, 0.8);
     }
 
     /* Additional styling for section containers */
@@ -55,31 +51,90 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
+    # Initialize session state for model creation and training status
+    if "model_created" not in st.session_state:
+        st.session_state["model_created"] = False
+    if "model_trained" not in st.session_state:
+        st.session_state["model_trained"] = False
+
+    # Initialize session state for section visibility (default to False)
+    if "show_creator" not in st.session_state:
+        st.session_state["show_creator"] = False
+    if "show_training" not in st.session_state:
+        st.session_state["show_training"] = False
+    if "show_evaluation" not in st.session_state:
+        st.session_state["show_evaluation"] = False
+
     # Top bar navigation
     st.markdown('<div class="top-bar"><h2>Neural Network Visualizer</h2></div>', unsafe_allow_html=True)
 
-    # Define sections and their corresponding functions
-    sections = {
-        "Creator": render_creator_section,
-        "Training": render_training_section,
-        "Evaluation": render_evaluation_section,
-    }
-
-    # Layout: Three horizontal sections
+    # Layout: Three horizontal columns for buttons
     col1, col2, col3 = st.columns(3)
 
-    # Create expandable sections with styling
+    # Button to toggle the visibility of each section in columns
     with col1:
-        with st.expander("Creator", expanded=True):  # You can set expanded=True to default open
-            render_creator_section()
+        if st.button("Toggle Creator"):
+            st.session_state["show_creator"] = not st.session_state["show_creator"]
 
     with col2:
-        with st.expander("Training", expanded=True):  # You can set expanded=True to default open
-            render_training_section()
+        if st.button("Toggle Training"):
+            st.session_state["show_training"] = not st.session_state["show_training"]
 
     with col3:
-        with st.expander("Evaluation", expanded=True):  # You can set expanded=True to default open
-            render_evaluation_section()
+        if st.button("Toggle Evaluation"):
+            st.session_state["show_evaluation"] = not st.session_state["show_evaluation"]
+
+    # Dynamic content rendering based on visibility status
+    # Use a container to render content dynamically
+    content = st.container()
+
+    with content:
+        active_sections = [
+            st.session_state["show_creator"],
+            st.session_state["show_training"],
+            st.session_state["show_evaluation"]
+        ]
+        num_active_sections = sum(active_sections)
+
+        # Adjust the layout dynamically based on the number of active sections
+        if num_active_sections == 1:
+            # Only one section active, so take up the full width
+            st.write("### Active Section")
+            if st.session_state["show_creator"]:
+                render_creator_section()
+            elif st.session_state["show_training"]:
+                render_training_section()
+            elif st.session_state["show_evaluation"]:
+                render_evaluation_section()
+
+        elif num_active_sections == 2:
+            # Two sections active, each takes half the width
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.session_state["show_creator"]:
+                    render_creator_section()
+                elif st.session_state["show_training"]:
+                    render_training_section()
+                elif st.session_state["show_evaluation"]:
+                    render_evaluation_section()
+            with col2:
+                if st.session_state["show_evaluation"]:
+                    render_evaluation_section()
+                if st.session_state["show_training"]:
+                    render_training_section()
+
+        elif num_active_sections == 3:
+            # All three sections active, each takes one-third of the width
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.session_state["show_creator"]:
+                    render_creator_section()
+            with col2:
+                if st.session_state["show_training"]:
+                    render_training_section()
+            with col3:
+                if st.session_state["show_evaluation"]:
+                    render_evaluation_section()
 
 if __name__ == "__main__":
     main()
