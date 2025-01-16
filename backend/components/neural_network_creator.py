@@ -1,5 +1,6 @@
 import streamlit as st
 
+from model.creation import create_model
 from components.visualization import visualize_interactive_model
 
 def render_creator_section():
@@ -37,6 +38,9 @@ def render_creator_section():
         if not st.session_state.get("dataset_selected", False):
             st.error("No dataset selected. Please select a dataset before creating a model.")
         else:
+            model = create_model(input_size, st.session_state.hidden_layers, output_size, st.session_state.activations)
+            st.text(model)
+            st.session_state["current_model"] = model
             html_file = visualize_interactive_model(input_size, st.session_state.hidden_layers, output_size)
             with open(html_file, "r") as f:
                 html_content = f.read()

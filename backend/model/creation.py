@@ -1,3 +1,4 @@
+import streamlit as st
 import torch.nn as nn
 import torchvision.models as models
 
@@ -15,19 +16,6 @@ def create_model(input_size=None, hidden_layers=None, output_size=None, activati
     Returns:
         nn.Module: The constructed or pretrained neural network model.
     """
-
-    if pretrained_model_name:
-        # Dictionary of available pretrained models
-        pretrained_models = {
-            'resnet18': models.resnet18(pretrained=True),
-            'mobilenet_v2': models.mobilenet_v2(pretrained=True),
-        }
-        
-        if pretrained_model_name in pretrained_models:
-            print(f"Loading pretrained model: {pretrained_model_name}")
-            return pretrained_models[pretrained_model_name]
-        else:
-            raise ValueError(f"Pretrained model '{pretrained_model_name}' is not available.")
     
     # Custom model creation
     if input_size is None or hidden_layers is None or output_size is None or activations is None:
@@ -44,4 +32,5 @@ def create_model(input_size=None, hidden_layers=None, output_size=None, activati
         in_features = out_features
 
     layers.append(nn.Linear(in_features, output_size))
+    st.session_state["model_selected"] = True
     return nn.Sequential(*layers)

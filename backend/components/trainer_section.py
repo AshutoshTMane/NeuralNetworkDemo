@@ -15,5 +15,9 @@ def render_training_section():
     learning_rate = st.number_input("Learning Rate", min_value=0.001, max_value=1.0, value=0.01, step=0.001, key="training_lr_input")
 
     if st.button("Train Model", key="train_button"):
-        train_model(st.session_state.hidden_layers, epochs, learning_rate)
-        st.success("Model training complete!")
+        if not st.session_state.get("dataset_selected", False) or not st.session_state.get("model_selected", False):
+            st.error("No dataset selected. Please select a dataset before training.")
+            return
+        else:
+            train_model(st.session_state.hidden_layers, epochs, learning_rate)
+            st.success("Model training complete!")

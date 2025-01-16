@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import time
 
 from model.creation import create_model
-from model.evaluation import evaluate_model
 
 from data.mnist_handwritting.mnist_handwritting import mnist_data
 
