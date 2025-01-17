@@ -1,10 +1,32 @@
 import streamlit as st
+import pandas as pd
 
 from model.creation import create_model
 from components.visualization import visualize_interactive_model
 
+def get_dataset_info():
+    """Returns the input size and output size based on the dataset."""
+    if "dataset" in st.session_state:
+        df = st.session_state["dataset"]
+
+        if isinstance(df, pd.DataFrame):  # For tabular data (e.g., Iris)
+            input_size = df.shape[1] - 1  # Exclude target column
+            output_size = len(df["target"].unique())  # Number of unique classes for classification
+        else:
+            st.error("Unsupported dataset type. Please use a tabular dataset.")
+            # Handle other cases like image or audio datasets (e.g., MNIST, SpeechCommands)
+            input_size = 784  # Default for MNIST (28x28 images)
+            output_size = 10  # Default output size for MNIST (10 classes)
+        
+        return input_size, output_size
+    else:
+        return 784, 10  # Default values if no dataset is selected
+
 def render_creator_section():
     st.header("Neural Network Creator")
+
+    # Automatically set input and output sizes based on the dataset
+    input_size, output_size = get_dataset_info()
 
     # Sidebar inputs for model configuration
     if "hidden_layers" not in st.session_state:
@@ -12,8 +34,9 @@ def render_creator_section():
     if "activations" not in st.session_state:
         st.session_state.activations = []
 
-    input_size = st.number_input("Input Layer Size", min_value=1, value=784, step=1)
-    output_size = st.number_input("Output Layer Size", min_value=1, value=10, step=1)
+    # Display automatically detected input/output sizes
+    st.write(f"Input Size: {input_size}")
+    st.write(f"Output Size: {output_size}")
 
     # Add or edit hidden layers
     if st.button("Add Hidden Layer"):
