@@ -2,7 +2,7 @@ import streamlit as st
 import torch.nn as nn
 import torchvision.models as models
 
-def create_model(input_size=None, hidden_layers=None, output_size=None, activations=None, pretrained_model_name=None):
+def create_model(input_size=None, hidden_layers=None, output_size=None, activations=None):
     """
     Creates a fully connected neural network or loads a pretrained model.
 
@@ -33,4 +33,11 @@ def create_model(input_size=None, hidden_layers=None, output_size=None, activati
 
     layers.append(nn.Linear(in_features, output_size))
     st.session_state["model_selected"] = True
+
+    st.write(f"Creating model with input_size={input_size}, hidden_layers={hidden_layers}, "
+        f"output_size={output_size}, activations={activations}")
+    st.write(f"Input Size: {input_size}")
+    st.write(f"Hidden Layers: {st.session_state.hidden_layers}")
+    st.write(f"Output Size: {output_size}")
+    st.write(f"Activations: {st.session_state.activations}")
     return nn.Sequential(*layers)

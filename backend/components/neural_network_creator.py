@@ -20,7 +20,7 @@ def get_dataset_info():
         
         return input_size, output_size
     else:
-        return 784, 10  # Default values if no dataset is selected
+        return 0, 0  # Default values if no dataset is selected
 
 def render_creator_section():
     st.subheader("Model Maker")
@@ -38,51 +38,54 @@ def render_creator_section():
     st.write(f"Input Size: {input_size}")
     st.write(f"Output Size: {output_size}")
 
-    # Add or edit hidden layers
+    # Function to calculate the suggested number of neurons for the next layer
+    def calculate_next_layer_size():
+        if len(st.session_state.hidden_layers) == 0:
+            return max((input_size + output_size) // 2, 1)  # First hidden layer size
+        else:
+            # Progressively reduce the size based on the previous layer and output size
+            prev_size = st.session_state.hidden_layers[-1]
+            return max((prev_size + output_size) // 2, output_size)
+
+    # Add a new hidden layer with default values
     if st.button("Add Hidden Layer"):
-        st.session_state.hidden_layers.append(256)
+        suggested_neurons = calculate_next_layer_size()
+        st.session_state.hidden_layers.append(suggested_neurons)
         st.session_state.activations.append("ReLU")
 
-    # Inject CSS to open all expanders by default
-    st.markdown(
-        """
-        <style>
-        .streamlit-expanderHeader {
-            background-color: #f0f0f0; /* Optional: styling */
-        }
-        .streamlit-expanderContent {
-            display: block !important; /* Make expander open by default */
-        }
-        </style>
-        """, unsafe_allow_html=True
-    )
-
-    # Create hidden layer inputs with delete functionality
+    # Create hidden layer inputs with delete and save functionality
     for i, (layer_size, activation) in enumerate(zip(st.session_state.hidden_layers, st.session_state.activations)):
-        # Dynamic expander title showing neurons and activation
+        # The title dynamically updates based on saved values
         expander_title = f"Hidden Layer {i+1} - Neurons: {layer_size}, Activation: {activation}"
         
-        with st.expander(expander_title):
-            col1, col2 = st.columns([10, 1])  # 10 for input size, 1 for delete button
+        with st.expander(expander_title, expanded=True):
+            col1, col2, col3 = st.columns([6, 3, 1])  # Adjust column ratios for input, save, and delete
             
             with col1:
-                st.session_state.hidden_layers[i] = st.number_input(
+                # Inputs for layer size and activation
+                updated_layer_size = st.number_input(
                     f"Size for Layer {i+1}",
                     value=layer_size,
-                    key=f"layer_size_{i}"  # Unique key for each layer size
+                    key=f"layer_size_input_{i}"  # Unique key for this input
                 )
-                st.session_state.activations[i] = st.selectbox(
+                updated_activation = st.selectbox(
                     f"Activation for Layer {i+1}",
                     ["ReLU", "Sigmoid", "Tanh"],
                     index=["ReLU", "Sigmoid", "Tanh"].index(activation),
-                    key=f"activation_{i}"  # Unique key for each activation function
+                    key=f"activation_input_{i}"  # Unique key for this selectbox
                 )
             
-            # Delete button in the second column (styled as an "X")
             with col2:
-                delete_key = f"delete_{i}"  # Unique delete button key
-                if st.button("❌", key=delete_key):
-                    # Remove the layer and its activation from session state
+                # Save button to commit changes to the layer
+                if st.button("Save Changes", key=f"save_button_{i}"):
+                    # Update the session state and refresh UI
+                    st.session_state.hidden_layers[i] = updated_layer_size
+                    st.session_state.activations[i] = updated_activation
+            
+            with col3:
+                # Delete button to remove the layer
+                if st.button("❌", key=f"delete_button_{i}"):
+                    # Remove the layer and refresh UI
                     st.session_state.hidden_layers.pop(i)
                     st.session_state.activations.pop(i)
 
