@@ -8,14 +8,15 @@ import random
 from sklearn.datasets import load_iris, load_digits
 
 def render_dataset_selection_section():
-    st.header("Dataset Selection")
+    st.header("Neural Network Creator")
+    st.subheader("Dataset Selection")
 
     if "dataset_selected" not in st.session_state:
         st.session_state["dataset_selected"] = False
     if "success_message" not in st.session_state:
         st.session_state["success_message"] = ""
 
-    st.subheader("Choose Your Dataset")
+    st.markdown("#### Choose Your Dataset")
     col1, col2 = st.columns(2)
 
     with col1:

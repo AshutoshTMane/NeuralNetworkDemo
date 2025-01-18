@@ -3,7 +3,7 @@ import torch
 import torchvision.models as models
 
 def render_pretrained_model_section():
-    st.header("Load Pretrained Model")
+    st.subheader("Load Pretrained Model")
 
     if "pretrained_model_open" not in st.session_state:
         st.session_state["pretrained_model_open"] = False

@@ -23,7 +23,7 @@ def get_dataset_info():
         return 784, 10  # Default values if no dataset is selected
 
 def render_creator_section():
-    st.header("Neural Network Creator")
+    st.subheader("Model Maker")
 
     # Automatically set input and output sizes based on the dataset
     input_size, output_size = get_dataset_info()
@@ -43,19 +43,48 @@ def render_creator_section():
         st.session_state.hidden_layers.append(256)
         st.session_state.activations.append("ReLU")
 
+    # Inject CSS to open all expanders by default
+    st.markdown(
+        """
+        <style>
+        .streamlit-expanderHeader {
+            background-color: #f0f0f0; /* Optional: styling */
+        }
+        .streamlit-expanderContent {
+            display: block !important; /* Make expander open by default */
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
+    # Create hidden layer inputs with delete functionality
     for i, (layer_size, activation) in enumerate(zip(st.session_state.hidden_layers, st.session_state.activations)):
-        with st.expander(f"Hidden Layer {i+1}"):
-            st.session_state.hidden_layers[i] = st.number_input(
-                f"Size for Layer {i+1}",
-                value=layer_size,
-                key=f"layer_size_{i}"
-            )
-            st.session_state.activations[i] = st.selectbox(
-                f"Activation for Layer {i+1}",
-                ["ReLU", "Sigmoid", "Tanh"],
-                index=["ReLU", "Sigmoid", "Tanh"].index(activation),
-                key=f"activation_{i}"
-            )
+        # Dynamic expander title showing neurons and activation
+        expander_title = f"Hidden Layer {i+1} - Neurons: {layer_size}, Activation: {activation}"
+        
+        with st.expander(expander_title):
+            col1, col2 = st.columns([10, 1])  # 10 for input size, 1 for delete button
+            
+            with col1:
+                st.session_state.hidden_layers[i] = st.number_input(
+                    f"Size for Layer {i+1}",
+                    value=layer_size,
+                    key=f"layer_size_{i}"  # Unique key for each layer size
+                )
+                st.session_state.activations[i] = st.selectbox(
+                    f"Activation for Layer {i+1}",
+                    ["ReLU", "Sigmoid", "Tanh"],
+                    index=["ReLU", "Sigmoid", "Tanh"].index(activation),
+                    key=f"activation_{i}"  # Unique key for each activation function
+                )
+            
+            # Delete button in the second column (styled as an "X")
+            with col2:
+                delete_key = f"delete_{i}"  # Unique delete button key
+                if st.button("❌", key=delete_key):
+                    # Remove the layer and its activation from session state
+                    st.session_state.hidden_layers.pop(i)
+                    st.session_state.activations.pop(i)
 
     if st.button("Build Model"):
         if not st.session_state.get("dataset_selected", False):
