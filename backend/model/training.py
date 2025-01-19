@@ -3,27 +3,48 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import pandas as pd
 import time
 
-from model.creation import create_model
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, TensorDataset
 
-from data.mnist_handwritting.mnist_handwritting import mnist_data
-
-
-# Option to train the model
-def train_model(model, epochs, learning_rate=0.001):
+def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
     """
-    Trains a given model with the specified parameters.
+    Trains a given model with the specified dataset and parameters.
 
     Args:
         model (nn.Module): The neural network model to train.
+        dataset (tuple): A tuple containing the train and test data loaders.
         epochs (int): Number of training epochs.
         learning_rate (float): Learning rate for the optimizer.
     """
     st.header("Train the Model")
 
-    # Load data
-    train_loader, test_loader = mnist_data()
+    # Check if dataset is a pandas DataFrame, assuming it's structured with features and labels
+    if isinstance(dataset, pd.DataFrame):
+        # Split the dataset into features (X) and labels (y)
+        X = dataset.iloc[:, :-1].values  # All columns except the last one
+        y = dataset.iloc[:, -1].values   # Last column as labels
+
+        # Split the dataset into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Convert to tensors
+        X_train = torch.tensor(X_train, dtype=torch.float32)
+        y_train = torch.tensor(y_train, dtype=torch.long)
+        X_test = torch.tensor(X_test, dtype=torch.float32)
+        y_test = torch.tensor(y_test, dtype=torch.long)
+
+        # Create DataLoader instances
+        train_data = TensorDataset(X_train, y_train)
+        test_data = TensorDataset(X_test, y_test)
+
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    else:
+        st.error("Unsupported dataset format")
+        return
 
     # Log model structure and parameters
     st.write("Model Structure:")
