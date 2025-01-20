@@ -9,7 +9,7 @@ import time
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 
-def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
+def train_model(model, dataset, epochs, learning_rate, batch_size=32):
     """
     Trains a given model with the specified dataset and parameters.
 
@@ -20,6 +20,14 @@ def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
         learning_rate (float): Learning rate for the optimizer.
     """
     st.header("Train the Model")
+
+        # Initialize session state variables
+    if "training_progress" not in st.session_state:
+        st.session_state.training_progress = 0
+    if "epoch_losses" not in st.session_state:
+        st.session_state.epoch_losses = []
+    if "current_epoch" not in st.session_state:
+        st.session_state.current_epoch = 0
 
     # Check if dataset is a pandas DataFrame, assuming it's structured with features and labels
     if isinstance(dataset, pd.DataFrame):
@@ -47,9 +55,9 @@ def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
         return
 
     # Log model structure and parameters
-    st.write("Model Structure:")
-    st.text(model)
-    st.write(f"Training for {epochs} epochs with learning rate {learning_rate:.4f}")
+    #st.write("Model Structure:")
+    #st.text(model)
+    #st.write(f"Training for {epochs} epochs with learning rate {learning_rate:.4f}")
 
     # Device setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -67,6 +75,8 @@ def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
     total_batches = epochs * len(train_loader)
     batch_count = 0
     start_time = time.time()
+
+    epoch_progress = st.empty()
 
     # Training loop
     for epoch in range(epochs):
@@ -103,13 +113,18 @@ def train_model(model, dataset, epochs, learning_rate=0.001, batch_size=32):
                                     f"{estimated_time_remaining % 60:.0f}s")
 
         # Log epoch loss
-        losses.append(running_loss / len(train_loader))
-        st.write(f"Epoch {epoch + 1}/{epochs}, Loss: {running_loss / len(train_loader):.4f}")
+        epoch_loss = running_loss / len(train_loader)
+        st.session_state.epoch_losses.append(epoch_loss)
+        st.session_state.current_epoch += 1
+        epoch_progress.write(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss:.4f}")
+
+        
 
     # Plot loss curve
-    plt.plot(range(1, epochs + 1), losses, marker='o')
+    plt.plot(range(1, len(st.session_state.epoch_losses) + 1), st.session_state.epoch_losses)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
+    plt.title("Training Loss Curve")
     st.pyplot(plt)
 
     # Save the trained model in session state

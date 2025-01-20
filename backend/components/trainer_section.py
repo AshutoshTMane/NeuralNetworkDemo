@@ -8,10 +8,18 @@ def render_training_section():
     if "epochs" not in st.session_state:
         st.session_state.epochs = 10  # Default value
 
-    epochs = st.slider("Epochs", min_value=1, max_value=50, value=st.session_state.epochs, key="training_epochs_slider")
+    epochs = st.slider("Epochs", min_value=2, max_value=500, value=st.session_state.epochs, key="training_epochs_slider")
     st.session_state.epochs = epochs  # Update the value in session state
 
-    learning_rate = st.number_input("Learning Rate", min_value=0.001, max_value=1.0, value=0.01, step=0.001, key="training_lr_input")
+    learning_rate = st.number_input(
+        "Learning Rate",
+        min_value=0.0001,  # Minimum value allowed
+        max_value=1.0,     # Maximum value allowed
+        value=0.01,        # Default value
+        step=0.0001,       # Smaller step for finer control
+        format="%.4f",     # Display up to 4 decimal places
+        key="training_lr_input"
+    )
     
     if not st.session_state.get("dataset_selected", False) or not st.session_state.get("model_selected", False):
         # Center-align the error message

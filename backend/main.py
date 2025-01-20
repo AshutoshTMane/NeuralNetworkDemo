@@ -9,8 +9,12 @@ from components.evaluation_section import render_evaluation_section
 st.set_page_config(layout="wide")
 
 # Add custom CSS for styling
-st.markdown("""
+theme_page_1 = """
     <style>
+    body {
+        background-color: #ffffff;
+        color: #333333;
+    }
     .top-bar {
         text-align: center;
         padding: 10px;
@@ -49,10 +53,32 @@ st.markdown("""
         border-radius: 10px;
         background-color: #f9f9f9;
     }
-    </style>
-""", unsafe_allow_html=True)
 
-def main():
+    
+    </style>
+"""
+
+theme_page_2 = """
+    <style>
+    body {
+        background-color: #1e1e1e;
+        color: #ffffff;
+    }
+    .top-bar {
+        text-align: center;
+        padding: 10px;
+        color: white;
+        font-family: 'Arial Black', sans-serif;
+        background-color: #6a5acd;
+        border-radius: 10px;
+    }
+    
+    </style>
+"""
+
+def render_page_1():
+
+    st.markdown(theme_page_1, unsafe_allow_html=True)
     # Initialize session state for model creation and training status
     if "model_created" not in st.session_state:
         st.session_state["model_created"] = False
@@ -125,8 +151,12 @@ def main():
             with col2:
                 if st.session_state["show_evaluation"]:
                     render_evaluation_section()
-                if st.session_state["show_training"]:
+                elif st.session_state["show_training"]:
                     render_training_section()
+                elif st.session_state["show_creator"]:
+                    render_dataset_selection_section()
+                    render_creator_section()
+                    render_pretrained_model_section()
 
         elif num_active_sections == 3:
             # All three sections active, each takes one-third of the width
@@ -142,6 +172,28 @@ def main():
             with col3:
                 if st.session_state["show_evaluation"]:
                     render_evaluation_section()
+
+
+# Function to display Page 2
+def render_page_2():
+    st.markdown(theme_page_2, unsafe_allow_html=True)
+    st.markdown('<div class="top-bar"><h2>Neural Network Visualizer - Page 2</h2></div>', unsafe_allow_html=True)
+    render_training_section()
+    render_evaluation_section()
+
+
+# Main function
+def main():
+    # Select slider widget
+    option = st.select_slider('Choose an option', options=['Off', 'On'])
+    
+    # Display different content based on the slider option
+    if option == 'Off':
+        render_page_1()
+    else:
+        render_page_2()
+
+
 
 if __name__ == "__main__":
     main()

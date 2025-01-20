@@ -17,9 +17,10 @@ def render_dataset_selection_section():
         st.session_state["success_message"] = ""
 
     st.markdown("#### Choose Your Dataset")
-    col1, col2 = st.columns(2)
+        # Use tabs to separate sections
+    tab1, tab2 = st.tabs(["Upload Dataset", "Use Premade Dataset"])
 
-    with col1:
+    with tab1:
         uploaded_file = st.file_uploader("Upload Your Dataset", type=["csv", "xlsx", "json"])
         if uploaded_file:
             st.session_state["dataset_selected"] = True
@@ -38,7 +39,7 @@ def render_dataset_selection_section():
             except Exception as e:
                 st.error(f"Error reading dataset: {e}")
 
-    with col2:
+    with tab2:
         st.subheader("Use a Predefined Dataset")
         predefined_datasets = ["Iris", "MNIST Handwriting", "SpeechCommands"]
         selected_dataset = st.selectbox("Select a Predefined Dataset", predefined_datasets)
@@ -53,7 +54,7 @@ def render_dataset_selection_section():
                 df['target'] = data.target
 
                 # Show 5 random examples from the Iris dataset
-                st.write("Example from this dataset:")
+                st.write("Examples from this dataset:")
                 random_indices = np.random.choice(len(df), size=5, replace=False)
                 st.write(df.iloc[random_indices])
 
@@ -63,7 +64,7 @@ def render_dataset_selection_section():
                 df['target'] = data.target
 
                 # Show example images for MNIST
-                st.write("Example from this dataset:")
+                st.write("Examples from this dataset:")
                 random_indices = np.random.choice(len(data.images), size=5, replace=False)
                 fig, axes = plt.subplots(1, 5, figsize=(10, 3))
                 for ax, idx in zip(axes, random_indices):
