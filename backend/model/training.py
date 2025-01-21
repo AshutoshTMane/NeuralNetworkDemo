@@ -129,6 +129,7 @@ def train_model(model, dataset, epochs, learning_rate, batch_size=32):
 
     # Save the trained model in session state
     st.session_state.trained_model = model
+    st.session_state.test_loader = test_loader  # Save the test dataset in session state
     st.success("Model training complete!")
 
     return model, test_loader

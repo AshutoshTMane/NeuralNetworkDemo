@@ -4,6 +4,8 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
+from torchvision import transforms
 
 
 def evaluate_model(model, test_loader):
@@ -42,18 +44,34 @@ def evaluate_model(model, test_loader):
     st.pyplot(fig)
 
 
-def predict_single_sample(model, image, transform):
+def predict_single_sample(model, image, transform=None):
     st.subheader("Single Sample Prediction")
 
-    # Preprocess and predict
+    # Preprocess the input
     if transform:
         image = transform(image).unsqueeze(0)  # Apply transform and add batch dimension
     else:
         image = torch.tensor(np.array(image)).float().unsqueeze(0)
 
+    # Debug: Check input shape
+    st.write("Input shape:", image.shape)
+
+    # Resize or reshape the input to match the model's new input size
+    image = F.adaptive_avg_pool2d(image, (1, 64)).view(1, -1)  # Resize to 1x64 vector
+
+    # Predict using the model
     model.eval()
     with torch.no_grad():
         output = model(image)
+        st.write("Model output:", output)  # Debug: Raw model output
         pred = torch.argmax(output, dim=1).item()
+
+        # Assuming `output` is the raw model output
+    probabilities = F.softmax(output, dim=1)
+    predicted_digit = torch.argmax(probabilities, dim=1).item()
+
+    print(f"Model output (logits): {output}")
+    print(f"Probabilities: {probabilities}")
+    print(f"Predicted Digit: {predicted_digit}")
 
     return pred
