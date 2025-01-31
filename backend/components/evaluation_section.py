@@ -28,7 +28,6 @@ def render_evaluation_section():
     # Tab 2: Evaluate with Preloaded Test Data
     with tab2:
         st.subheader("Batch Evaluation: Preloaded Test Data")
-        test_loader = st.session_state.test_loader
         if st.button("Evaluate Preloaded Data", key="evaluate_preloaded"):
             if model is None:
                 st.error("Model not loaded. Please complete the model setup first.")
