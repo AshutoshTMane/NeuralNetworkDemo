@@ -4,33 +4,15 @@ from components.neural_network_creator import render_creator_section
 from components.trainer_section import render_training_section
 from components.evaluation_section import render_evaluation_section
 
-# Initialize session state for navigation
-if "selected_section" not in st.session_state:
-    st.session_state.selected_section = "Creator"  # Default section
+# Initialize session state if not already set
+if "selected_info" not in st.session_state:
+    st.session_state.selected_info = "Welcome! Click an item to see details."
 
-def set_section(section_name):
-    """Updates the selected section in session state"""
-    st.session_state.selected_section = section_name
+def update_sidebar_info(new_info):
+    """Updates the sidebar based on interactions in the main content."""
+    st.session_state.selected_info = new_info
 
 def sidebar():
-    """Dynamically updates sidebar content based on selected section"""
-    st.sidebar.title("Neural Network Visualizer")
-
-    # Display section based on what user has selected
-    section = st.session_state.selected_section
-
-    if section == "Creator":
-        render_creator_section()
-    elif section == "Training":
-        render_training_section()
-    elif section == "Evaluation":
-        render_evaluation_section()
-
-# Main UI: Buttons to change sidebar content
-st.title("Neural Network Visualizer")
-st.button("Go to Creator", on_click=set_section, args=("Creator",))
-st.button("Go to Training", on_click=set_section, args=("Training",))
-st.button("Go to Evaluation", on_click=set_section, args=("Evaluation",))
-
-# Render sidebar dynamically
-sidebar()
+    """Sidebar that updates dynamically based on user interactions in the main content."""
+    st.sidebar.title("Dynamic Info Panel")
+    st.sidebar.write(st.session_state.selected_info) 
