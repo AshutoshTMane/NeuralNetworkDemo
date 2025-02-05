@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-from components.draggable_object import draggable_object 
+from components.information_button import floating_info_button  
 from components.render_pages import render_page_1, render_page_2
 
 
@@ -9,6 +9,7 @@ from components.render_pages import render_page_1, render_page_2
 # Main function
 def main():
 
+    floating_info_button()
     
     # Select slider widget
     option = st.select_slider('Choose an option', options=['Off', 'On'])
