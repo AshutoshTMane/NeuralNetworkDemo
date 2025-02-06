@@ -8,8 +8,6 @@ from components.render_pages import render_page_1, render_page_2
 
 # Main function
 def main():
-
-    floating_info_button()
     
     # Select slider widget
     option = st.select_slider('Choose an option', options=['Off', 'On'])
@@ -19,6 +17,9 @@ def main():
         render_page_1()
     else:
         render_page_2()
+
+
+    #floating_info_button()
     
 
 

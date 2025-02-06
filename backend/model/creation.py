@@ -4,39 +4,38 @@ import torchvision.models as models
 
 def create_model(input_size=None, hidden_layers=None, output_size=None, activations=None):
     """
-    Creates a fully connected neural network or loads a pretrained model.
+    Creates a fully connected neural network.
 
     Args:
-        input_size (int): Number of input features (ignored if pretrained_model_name is provided).
-        hidden_layers (list[int]): List of sizes for hidden layers (ignored if pretrained_model_name is provided).
-        output_size (int): Number of output features (ignored if pretrained_model_name is provided).
+        input_size (int): Number of input features.
+        hidden_layers (list[int]): List of sizes for hidden layers.
+        output_size (int): Number of output features.
         activations (list[str]): Activation functions for each hidden layer.
-        pretrained_model_name (str): Name of a pretrained model to load. 
 
     Returns:
-        nn.Module: The constructed or pretrained neural network model.
+        nn.Module: The constructed neural network model.
     """
     
-    # Custom model creation
+    # Ensure all required parameters are provided
     if input_size is None or hidden_layers is None or output_size is None or activations is None:
         raise ValueError("For custom models, input_size, hidden_layers, output_size, and activations are required.")
     
-    layers = []
-    in_features = input_size
+    layers = []  # List to store layers of the model
+    in_features = input_size  # Initial number of input features
 
+    # Iterate through the hidden layers and add them to the model
     for i, out_features in enumerate(hidden_layers):
-        layers.append(nn.Linear(in_features, out_features))
-        activation = getattr(nn, activations[i], None)
+        layers.append(nn.Linear(in_features, out_features))  # Add a linear layer
+        activation = getattr(nn, activations[i], None)  # Get the activation function
         if activation is not None:
-            layers.append(activation())
-        in_features = out_features
+            layers.append(activation())  # Add activation function if valid
+        in_features = out_features  # Update input size for the next layer
 
+    # Add the final output layer
     layers.append(nn.Linear(in_features, output_size))
+    
+    # Update Streamlit session state to indicate a model has been created
     st.session_state["model_selected"] = True
 
-    #st.write(f"Creating model with input_size={input_size}, hidden_layers={hidden_layers}, "f"output_size={output_size}, activations={activations}")
-    #st.write(f"Input Size: {input_size}")
-    #st.write(f"Hidden Layers: {st.session_state.hidden_layers}")
-    #st.write(f"Output Size: {output_size}")
-    #st.write(f"Activations: {st.session_state.activations}")
+    # Return the constructed model as a sequential container of layers
     return nn.Sequential(*layers)
