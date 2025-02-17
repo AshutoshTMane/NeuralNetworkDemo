@@ -27,6 +27,7 @@ def render_dataset_selection_section():
     with tab1:
         # Allow users to upload a dataset in CSV, Excel, or JSON format
         uploaded_file = st.file_uploader("Upload Your Dataset", type=["csv", "xlsx", "json"])
+        
         if uploaded_file:
             st.session_state["dataset_selected"] = True
             st.session_state["success_message"] = f"Loaded {uploaded_file.name} dataset successfully!"
@@ -35,14 +36,14 @@ def render_dataset_selection_section():
             # Attempt to read and display the uploaded dataset
             try:
                 if uploaded_file.name.endswith(".csv"):
-                    df = pd.read_csv(uploaded_file)
+                    df = pd.read_csv(uploaded_file)  # Read CSV file
                 elif uploaded_file.name.endswith(".xlsx"):
-                    df = pd.read_excel(uploaded_file)
+                    df = pd.read_excel(uploaded_file)  # Read Excel file
                 elif uploaded_file.name.endswith(".json"):
-                    df = pd.read_json(uploaded_file)
+                    df = pd.read_json(uploaded_file)  # Read JSON file
 
                 st.write(df.head())  # Show the first few rows of the dataset
-                st.session_state["dataset"] = df
+                st.session_state["dataset"] = df  # Store dataset in session state
             except Exception as e:
                 st.error(f"Error reading dataset: {e}")
 
